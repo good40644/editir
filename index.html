@@ -2316,11 +2316,13 @@ function updatePreview(){
   // 禁止符號檢查（模擬論壇失效行為）
   const FORBIDDEN=/[&=`'"()+\-\/<>]/;
   const hasForbidden=str=>{
-    // 先移除所有 BBCode 標籤（含屬性，如 [size=5], [color=#ff0000], [/b]）
-    const stripped=str.replace(/\[[^\]]*\]/g,'');
-    // 再檢查剩餘純文字是否含違規符號
+    // 先移除所有 BBCode 標籤（[xxx] 格式）
+    let stripped=str.replace(/\[[^\]]*\]/g,'');
+    // 再移除已被渲染的 HTML 標籤（<xxx> 格式），因為前面的處理已把部分 BBCode 轉成 HTML
+    stripped=stripped.replace(/<[^>]*>/g,'');
+    // 檢查剩餘純文字是否含違規符號
     if(FORBIDDEN.test(stripped))return true;
-    // 檢查裸露的 [ 或 ]（移除標籤後若還有殘留）
+    // 檢查裸露的 [ 或 ]
     if(stripped.includes('[')||stripped.includes(']'))return true;
     return false;
   };
