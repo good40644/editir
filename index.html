@@ -144,6 +144,7 @@ body.light-theme .float-btn-gallery:hover,body.light-theme .float-btn-draft:hove
 @keyframes xrainbowAnim{0%{color:#f00;}14%{color:#f90;}28%{color:#ff0;}42%{color:#0f0;}57%{color:#00f;}71%{color:#8b00ff;}85%{color:#f0f;}100%{color:#f00;}}
 @keyframes xggoldAnim{0%{background-position:0% 50%;}100%{background-position:200% 50%;}}
 @keyframes xfloatAnim{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+@keyframes xshakeAnim{0%,100%{transform:translateX(0);}15%{transform:translateX(-5px);}30%{transform:translateX(5px);}45%{transform:translateX(-4px);}60%{transform:translateX(4px);}75%{transform:translateX(-2px);}90%{transform:translateX(2px);}}
 #preview .xneon-text,#previewOverlayBody .xneon-text{
   color:#fff;font-weight:700;
   animation:xneonAnim 1.5s ease-in-out infinite;display:inline-block;
@@ -161,6 +162,13 @@ body.light-theme .float-btn-gallery:hover,body.light-theme .float-btn-draft:hove
 #preview .xfloat-text,#previewOverlayBody .xfloat-text{
   color:inherit;font-weight:700;
   animation:xfloatAnim 2s ease-in-out infinite;display:inline-block;
+}
+#preview .xshake-text,#previewOverlayBody .xshake-text{
+  color:#000;font-weight:700;display:inline-block;cursor:pointer;
+}
+#preview .xshake-text:hover,#previewOverlayBody .xshake-text:hover,
+#preview .xshake-text.xshake-tap,#previewOverlayBody .xshake-text.xshake-tap{
+  animation:xshakeAnim .5s ease-in-out;
 }
 .cb-drag-over{border-color:var(--gold)!important;background:rgba(240,180,41,.06)!important;}
 .cb-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;}
@@ -1009,6 +1017,15 @@ editor.addEventListener('input',e=>{
     if(before.endsWith(']')) tryAutoClose();
   }
 });
+// 搖晃特效：手機無 hover，改用點擊觸發動畫（委派事件，重繪預覽後仍有效）
+document.addEventListener('click',e=>{
+  const el=e.target.closest('.xshake-text');
+  if(!el)return;
+  el.classList.remove('xshake-tap');
+  void el.offsetWidth; // 強制重新觸發動畫
+  el.classList.add('xshake-tap');
+  el.addEventListener('animationend',()=>el.classList.remove('xshake-tap'),{once:true});
+});
 let savedSel={start:0,end:0,text:''};
 // Track if the last change was a cut operation
 let lastWasCut=false;
@@ -1022,7 +1039,7 @@ const AUTO_CLOSE_TAGS=[
   'b','i','u','strike','xgold','xcenter','xgban','xnote','xwarn',
   'xblue','xgreen','xred','xinfo','xglass','xsmall','xquote','quote',
   'xtag','xrate','xbtn','xspoiler','xcard','ximg','ovimg','oimg','xvimg-l','xvimg-r','xmp4','xvmp4',
-  'xneon','xrainbow','xggold','xfloat',
+  'xneon','xrainbow','xggold','xfloat','xshake',
   'xmp3','xsound','xsendvid','xmap','xmaplink','xyoutube','xsyoutube',
   'xtiktok','hide','sell','fly','move','code','url',
   'size','color','backcolor','align','xleft','xright',
@@ -1749,6 +1766,10 @@ function openModal(tag){
           <div style="font-size:18px;margin-bottom:4px;animation:none;color:var(--text);">飄動</div>
           <div style="font-size:10px;color:var(--text2);">[xfloat]</div>
         </button>
+        <button onclick="textfxSelect('xshake')" id="fxBtn_xshake" style="padding:14px 8px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);cursor:pointer;font-family:inherit;transition:all .2s;">
+          <div style="font-size:16px;margin-bottom:4px;display:inline-block;background:#fff;color:#000;font-weight:700;padding:2px 10px;border-radius:4px;">搖晃</div>
+          <div style="font-size:10px;color:var(--text2);">[xshake]</div>
+        </button>
       </div>
       <label>文字內容</label>
       <input id="fxText" value="${esc(selVal2)}" placeholder="輸入文字內容">`;
@@ -1915,7 +1936,7 @@ function prevImgSingle(){
 
 function textfxSelect(tag){
   window._textfxTag=tag;
-  ['xneon','xrainbow','xggold','xfloat'].forEach(t=>{
+  ['xneon','xrainbow','xggold','xfloat','xshake'].forEach(t=>{
     const btn=document.getElementById('fxBtn_'+t);
     if(!btn)return;
     btn.style.borderColor=t===tag?'var(--gold)':'var(--border)';
@@ -2414,6 +2435,7 @@ function updatePreview(){
     ['xrainbow',c=>hasForbidden(c)?failRaw('xrainbow',c):`<span class="xrainbow-text">${c}</span>`],
     ['xggold',c=>hasForbidden(c)?failRaw('xggold',c):`<span class="xggold-text">${c}</span>`],
     ['xfloat',c=>hasForbidden(c)?failRaw('xfloat',c):`<span class="xfloat-text">${c}</span>`],
+    ['xshake',c=>hasForbidden(c)?failRaw('xshake',c):`<span class="xshake-text">${c}</span>`],
     ['ximg',c=>`<img class="forum-img ximg-img" src="${c}" onerror="this.style.display='none'">`],
     ['ovimg',c=>`<img class="forum-img ovimg-img" src="${c}" onerror="this.style.display='none'">`],
     ['oimg',c=>`<img class="forum-img oimg-img" src="${c}" onerror="this.style.display='none'">`],    ['img',c=>`<img class="forum-img" src="${c}" onerror="this.style.display='none'">`],
