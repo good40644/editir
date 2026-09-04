@@ -1751,8 +1751,7 @@ function openModal(tag){
         </button>
       </div>
       <label>文字內容</label>
-      <input id="fxText" value="${esc(selVal2)}" placeholder="輸入文字內容">
-      <div id="fxPreview" style="margin-top:10px;min-height:32px;text-align:center;font-size:16px;font-weight:700;"></div>`;
+      <input id="fxText" value="${esc(selVal2)}" placeholder="輸入文字內容">`;
       document.getElementById('modalOK').textContent='插入';
       window._textfxTag='xneon';
       setTimeout(()=>{ textfxSelect('xneon'); },30);
@@ -1922,18 +1921,6 @@ function textfxSelect(tag){
     btn.style.borderColor=t===tag?'var(--gold)':'var(--border)';
     btn.style.background=t===tag?'rgba(240,180,41,.1)':'var(--surface2)';
   });
-  // 更新預覽
-  const textEl=document.getElementById('fxText');
-  const prev=document.getElementById('fxPreview');
-  if(!prev)return;
-  const txt=(textEl?textEl.value:'')||'預覽文字';
-  const styles={
-    xneon:'background:linear-gradient(90deg,#f0f,#0ff,#f0f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 6px #f0f);',
-    xrainbow:'background:linear-gradient(90deg,#f00,#f90,#ff0,#0f0,#00f,#f0f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;',
-    xggold:'background:linear-gradient(90deg,#b8860b,#fff9a0,#f0b429,#fff,#f0b429);-webkit-background-clip:text;-webkit-text-fill-color:transparent;',
-    xfloat:'color:var(--gold);display:inline-block;animation:xfloatAnim 2s ease-in-out infinite;',
-  };
-  prev.innerHTML=`<span style="font-size:18px;font-weight:700;${styles[tag]||''}">${escHtml(txt)}</span>`;
 }
 
 function ximgSetType(type){
