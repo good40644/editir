@@ -1278,37 +1278,46 @@ function renumberImages(){
   const editor_=document.getElementById('editor');
   if(!editor_)return;
   let text=editor_.value;
-  const anyTagStart='(?:\\[ximg\\]|\\[ovimg\\]|\\[oimg\\]|\\[xvimg-l\\]|\\[xvimg-r\\]|\\[url=[^\\]]+\\]\\[img\\]|\\[img\\])';
+  const TAGS=['xvimg-l','xvimg-r','ximg','ovimg','oimg','img'];
+  const mkPat=tag=>`(?:\\[url=[^\\]]+\\])?\\[${tag}\\][\\s\\S]*?\\[\\/${tag}\\](?:\\[\\/url\\])?`;
+  const anyTagAlt=TAGS.map(mkPat).join('|');
+
   // 先移除先前工具自動加上的編號行（[b]純數字或「N&M.」[/b]格式，且緊接在圖片標籤前）
-  const stripRe=new RegExp('(^|\\n)[ \\t]*(?:\\[b\\])?\\d+(?:&\\d+)?\\.(?:\\[\\/b\\])?[ \\t]*\\r?\\n(?='+anyTagStart+')','g');
+  const stripRe=new RegExp('(^|\\n)[ \\t]*(?:\\[b\\])?\\d+(?:&\\d+)?\\.(?:\\[\\/b\\])?[ \\t]*\\r?\\n(?='+anyTagAlt+')','g');
   text=text.replace(stripRe,'$1');
 
-  const PAIR='\\[xvimg-l\\][\\s\\S]*?\\[\\/xvimg-l\\]\\s*\\[xvimg-r\\][\\s\\S]*?\\[\\/xvimg-r\\]';
-  const URLIMG='\\[url=[^\\]]+\\]\\[img\\][\\s\\S]*?\\[\\/img\\]\\[\\/url\\]';
-  const XIMG='\\[ximg\\][\\s\\S]*?\\[\\/ximg\\]';
-  const OVIMG='\\[ovimg\\][\\s\\S]*?\\[\\/ovimg\\]';
-  const OIMG='\\[oimg\\][\\s\\S]*?\\[\\/oimg\\]';
-  const IMG='\\[img\\][\\s\\S]*?\\[\\/img\\]';
-  const SOLO_XVL='\\[xvimg-l\\][\\s\\S]*?\\[\\/xvimg-l\\]';
-  const SOLO_XVR='\\[xvimg-r\\][\\s\\S]*?\\[\\/xvimg-r\\]';
-  const full=new RegExp(PAIR+'|'+URLIMG+'|'+XIMG+'|'+OVIMG+'|'+OIMG+'|'+IMG+'|'+SOLO_XVL+'|'+SOLO_XVR,'g');
-
+  const full=new RegExp(anyTagAlt,'g');
   const matches=[...text.matchAll(full)];
   if(!matches.length){showToast('❌ 文章內沒有偵測到圖片');return;}
+
+  // 雙頁美圖是否成對，直接看標籤本身是不是 L 緊接著下一個偵測到的圖片是 R，
+  // 不管中間包了什麼（不同圖床的外連代碼格式可能不同），這樣比對外觀文字間距更準確
+  const getSide=s=>/\[xvimg-l\]/.test(s)?'L':(/\[xvimg-r\]/.test(s)?'R':'S');
 
   let out='';
   let lastIndex=0;
   let n=1;
-  matches.forEach(m=>{
+  let i=0;
+  while(i<matches.length){
+    const m=matches[i];
     out+=text.slice(lastIndex,m.index);
     if(out.length&&!/\n$/.test(out))out+='\n';
-    const isPair=m[0].includes('[xvimg-l]')&&m[0].includes('[xvimg-r]');
-    let label;
-    if(isPair){label=`[b]${n}&${n+1}.[/b]`;n+=2;}
-    else{label=`[b]${n}.[/b]`;n+=1;}
-    out+=label+'\n'+m[0];
-    lastIndex=m.index+m[0].length;
-  });
+    const next=matches[i+1];
+    const isPair=getSide(m[0])==='L'&&next&&getSide(next[0])==='R';
+    if(isPair){
+      out+=`[b]${n}&${n+1}.[/b]`+'\n'+m[0];
+      lastIndex=m.index+m[0].length;
+      out+=text.slice(lastIndex,next.index)+next[0]; // 保留左右頁之間原有的內容（例如換行或包裝標籤）
+      lastIndex=next.index+next[0].length;
+      n+=2;
+      i+=2;
+    } else {
+      out+=`[b]${n}.[/b]`+'\n'+m[0];
+      lastIndex=m.index+m[0].length;
+      n+=1;
+      i+=1;
+    }
+  }
   out+=text.slice(lastIndex);
 
   editor_.value=out;
